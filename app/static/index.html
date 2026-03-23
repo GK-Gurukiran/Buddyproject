@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --bg-hover: #2a2a2a;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666;
+            --accent: #6c5ce7;
+            --accent-hover: #7c6ef7;
+            --border: #333;
+            --user-bubble: #6c5ce7;
+            --ai-bubble: #1e1e1e;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        .login-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px;
+            width: 420px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-box p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn:hover { background: var(--accent-hover); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* Main Chat Layout */
+        .app-container {
+            display: none;
+            height: 100vh;
+        }
+
+        .app-layout {
+            display: flex;
+            height: 100%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-header .user-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .new-chat-btn {
+            margin: 16px 20px;
+            padding: 10px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .new-chat-btn:hover { background: var(--accent-hover); }
+
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 12px;
+        }
+
+        .session-item {
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: background 0.15s;
+        }
+
+        .session-item:hover { background: var(--bg-hover); }
+        .session-item.active { background: var(--bg-tertiary); }
+
+        .session-item .session-title {
+            font-size: 13px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-item .session-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-header h3 {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .chat-header .model-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+        }
+
+        /* Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        .welcome-screen h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .welcome-screen p {
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+
+        .suggestions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            max-width: 500px;
+        }
+
+        .suggestion-card {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .suggestion-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .message {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .message.user { flex-direction: row-reverse; }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--accent);
+        }
+
+        .message.assistant .message-avatar {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 70%;
+        }
+
+        .message.user .message-content {
+            background: var(--user-bubble);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: var(--ai-bubble);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .message.user .message-meta { text-align: right; }
+
+        .typing-indicator {
+            display: none;
+            margin-bottom: 24px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .typing-indicator .dots {
+            display: flex;
+            gap: 4px;
+            padding: 16px;
+            background: var(--ai-bubble);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: fit-content;
+            margin-left: 44px;
+        }
+
+        .typing-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .input-wrapper textarea {
+            flex: 1;
+            padding: 14px 18px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            min-height: 48px;
+            max-height: 150px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .send-btn:hover { background: var(--accent-hover); }
+        .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .messages-container { padding: 16px; }
+            .input-area { padding: 12px 16px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-container" id="loginScreen">
+    <div class="login-box">
+        <h1>AI Chatbot</h1>
+        <p>Scalable Multi-Agent Platform</p>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" value="admin@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" value="admin123" required>
+            </div>
+            <button type="submit" class="btn" id="loginBtn">Sign In</button>
+            <div class="error-msg" id="loginError"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Main App -->
+<div class="app-container" id="appScreen">
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>AI Chatbot</h2>
+                <div class="user-info" id="userInfo"></div>
+            </div>
+            <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
+            <div class="session-list" id="sessionList"></div>
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <h3 id="chatTitle">New Chat</h3>
+                <span class="model-badge">GPT-4o-mini via OpenRouter</span>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <h2>What can I help with?</h2>
+                    <p>Ask me anything — I use multiple AI agents to help you.</p>
+                    <div class="suggestions">
+                        <div class="suggestion-card" onclick="sendSuggestion('Explain how machine learning works in simple terms')">
+                            Explain how machine learning works in simple terms
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('What are the best practices for building REST APIs?')">
+                            What are the best practices for building REST APIs?
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Compare Python and JavaScript for backend development')">
+                            Compare Python and JavaScript for backend development
+                        </div>
+                        <div class="suggestion-card" onclick="sendSuggestion('Write a Python function to check if a number is prime')">
+                            Write a Python function to check if a number is prime
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="Type your message..." rows="1"
+                        onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api/v1';
+    let authToken = null;
+    let currentUser = null;
+    let currentSessionId = null;
+    let sessions = [];
+    let isLoading = false;
+
+    // --- Auth ---
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorEl = document.getElementById('loginError');
+        const btn = document.getElementById('loginBtn');
+
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+        errorEl.style.display = 'none';
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.detail || 'Login failed');
+            }
+
+            authToken = data.access_token;
+            localStorage.setItem('token', authToken);
+
+            // Get user info
+            const userRes = await fetch(`${API_BASE}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            currentUser = await userRes.json();
+
+            showApp();
+        } catch (err) {
+            errorEl.textContent = err.message;
+            errorEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+    }
+
+    function handleLogout() {
+        authToken = null;
+        currentUser = null;
+        currentSessionId = null;
+        localStorage.removeItem('token');
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('appScreen').style.display = 'none';
+    }
+
+    function showApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appScreen').style.display = 'block';
+        document.getElementById('userInfo').textContent = `${currentUser.email} (${currentUser.role})`;
+        loadSessions();
+        startNewChat();
+    }
+
+    // --- Sessions ---
+    async function loadSessions() {
+        try {
+            const res = await fetch(`${API_BASE}/chat/sessions`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (res.ok) {
+                sessions = await res.json();
+                renderSessions();
+            }
+        } catch (err) {
+            console.error('Failed to load sessions:', err);
+        }
+    }
+
+    function renderSessions() {
+        const list = document.getElementById('sessionList');
+        if (sessions.length === 0) {
+            list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">No conversations yet</div>';
+            return;
+        }
+
+        list.innerHTML = sessions.map(s => `
+            <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
+                 onclick="loadSession('${s.id}')">
+                <div class="session-title">${escapeHtml(s.title)}</div>
+                <div class="session-meta">${s.message_count} messages</div>
+            </div>
+        `).join('');
+    }
+
+    async function loadSession(sessionId) {
+        currentSessionId = sessionId;
+        renderSessions();
+
+        const session = sessions.find(s => s.id === sessionId);
+        if (session) {
+            document.getElementById('chatTitle').textContent = session.title;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (res.ok) {
+                const messages = await res.json();
+                renderMessages(messages);
+            }
+        } catch (err) {
+            console.error('Failed to load messages:', err);
+        }
+    }
+
+    function startNewChat() {
+        currentSessionId = null;
+        document.getElementById('chatTitle').textContent = 'New Chat';
+        document.getElementById('messagesContainer').innerHTML = `
+            <div class="welcome-screen" id="welcomeScreen">
+                <h2>What can I help with?</h2>
+                <p>Ask me anything — I use multiple AI agents to help you.</p>
+                <div class="suggestions">
+                    <div class="suggestion-card" onclick="sendSuggestion('Explain how machine learning works in simple terms')">
+                        Explain how machine learning works in simple terms
+                    </div>
+                    <div class="suggestion-card" onclick="sendSuggestion('What are the best practices for building REST APIs?')">
+                        What are the best practices for building REST APIs?
+                    </div>
+                    <div class="suggestion-card" onclick="sendSuggestion('Compare Python and JavaScript for backend development')">
+                        Compare Python and JavaScript for backend development
+                    </div>
+                    <div class="suggestion-card" onclick="sendSuggestion('Write a Python function to check if a number is prime')">
+                        Write a Python function to check if a number is prime
+                    </div>
+                </div>
+            </div>
+        `;
+        renderSessions();
+        document.getElementById('messageInput').focus();
+    }
+
+    // --- Messages ---
+    function renderMessages(messages) {
+        const container = document.getElementById('messagesContainer');
+        if (messages.length === 0) {
+            startNewChat();
+            return;
+        }
+
+        container.innerHTML = messages.map(m => `
+            <div class="message ${m.role}">
+                <div class="message-avatar">${m.role === 'user' ? 'U' : 'AI'}</div>
+                <div>
+                    <div class="message-content">${formatMessage(m.content)}</div>
+                    ${m.agent_name ? `<div class="message-meta">Agent: ${m.agent_name}</div>` : ''}
+                    ${m.role === 'assistant' && window.lastAgentTrace ? `<div class="message-meta">${renderAgentChecklist(window.lastAgentTrace)}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        scrollToBottom();
+    }
+
+    function addMessage(role, content, agentName) {
+        const container = document.getElementById('messagesContainer');
+        const welcome = document.getElementById('welcomeScreen');
+        if (welcome) welcome.remove();
+
+        const msgEl = document.createElement('div');
+        msgEl.className = `message ${role}`;
+        msgEl.innerHTML = `
+            <div class="message-avatar">${role === 'user' ? 'U' : 'AI'}</div>
+            <div>
+                <div class="message-content">${formatMessage(content)}</div>
+                ${agentName ? `<div class="message-meta">Agent: ${agentName}</div>` : ''}
+                ${role === 'assistant' && window.lastAgentTrace ? `<div class="message-meta">${renderAgentChecklist(window.lastAgentTrace)}</div>` : ''}
+            </div>
+        `;
+        container.appendChild(msgEl);
+        scrollToBottom();
+    }
+
+    // --- Send Message ---
+    function sendSuggestion(text) {
+        document.getElementById('messageInput').value = text;
+        sendMessage();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        if (!message || isLoading) return;
+
+        isLoading = true;
+        input.value = '';
+        autoResize(input);
+        document.getElementById('sendBtn').disabled = true;
+
+        // Show user message
+        addMessage('user', message);
+
+        // Show typing indicator
+        document.getElementById('typingIndicator').style.display = 'block';
+        scrollToBottom();
+
+        try {
+            const body = { message };
+            if (currentSessionId) body.session_id = currentSessionId;
+
+            const res = await fetch(`${API_BASE}/chat/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.detail || 'Failed to get response');
+            }
+
+            // Hide typing indicator
+            document.getElementById('typingIndicator').style.display = 'none';
+
+            // Store agent_trace for display
+            window.lastAgentTrace = data.agent_trace || [];
+            // Show AI response
+            addMessage('assistant', data.response, data.agent_used);
+
+            // Update session
+            if (!currentSessionId) {
+                currentSessionId = data.session_id;
+                document.getElementById('chatTitle').textContent = message.substring(0, 50);
+            }
+
+            // Reload sessions
+            await loadSessions();
+
+        } catch (err) {
+            document.getElementById('typingIndicator').style.display = 'none';
+            addMessage('assistant', `Error: ${err.message}`);
+        } finally {
+            isLoading = false;
+            document.getElementById('sendBtn').disabled = false;
+            input.focus();
+        }
+    }
+
+    // --- Helpers ---
+    function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+    }
+
+    function scrollToBottom() {
+        const container = document.getElementById('messagesContainer');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatMessage(text) {
+        // Basic markdown-like formatting
+        let html = escapeHtml(text);
+        // Code blocks
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre style="background:var(--bg-tertiary);padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0;font-size:13px;"><code>$2</code></pre>');
+        // Inline code
+        html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
+        // Bold
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Line breaks
+        html = html.replace(/\n/g, '<br>');
+        return html;
+    }
+
+    function renderAgentChecklist(agentTrace) {
+        const allAgents = ['supervisor', 'research', 'scraper', 'assembler'];
+        return 'Agents: ' + allAgents.map(agent =>
+            agentTrace.includes(agent)
+                ? `<strong style="color:var(--success);">${agent} ✔️</strong>`
+                : `<span style="color:var(--text-muted);">${agent}</span>`
+        ).join(' | ');
+    }
+
+    // --- Auto-login if token exists ---
+    (async function init() {
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${savedToken}` }
+                });
+                if (res.ok) {
+                    authToken = savedToken;
+                    currentUser = await res.json();
+                    showApp();
+                    return;
+                }
+            } catch (e) {}
+            localStorage.removeItem('token');
+        }
+    })();
+</script>
+
+</body>
+</html>

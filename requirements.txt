@@ -1,0 +1,42 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+pydantic-settings
+python-dotenv
+python-multipart
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+
+# Database
+sqlalchemy>=2.0
+aiosqlite
+
+# LangChain / LangGraph
+langchain
+langchain-openai
+langchain-community
+langgraph
+
+# Memory & Vector Store
+mem0ai
+qdrant-client
+
+# Web Search & Scraping (primary - paid)
+tavily-python
+firecrawl-py
+
+# Web Search & Scraping (free fallbacks - always installed)
+duckduckgo-search
+httpx
+beautifulsoup4
+
+# Voice (LiveKit) — optional, only needed for voice features
+livekit>=0.15
+livekit-agents
+
+# Utilities
+websockets

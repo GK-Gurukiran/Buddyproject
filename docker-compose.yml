@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  # ──────────────────────────────────────
+  # Main API Server
+  # ──────────────────────────────────────
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./chatbot.db
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - LIVEKIT_URL=ws://livekit:7880
+      - LIVEKIT_API_KEY=devkey
+      - LIVEKIT_API_SECRET=devsecretdevsecretdevsecretdevsecretdevsecret
+      - DEBUG=true
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - chatbot-net
+
+  # ──────────────────────────────────────
+  # Qdrant Vector Database
+  # ──────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - chatbot-net
+
+  # ──────────────────────────────────────
+  # LiveKit Server (Voice)
+  # ──────────────────────────────────────
+  livekit:
+    image: livekit/livekit-server:latest
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    environment:
+      - LIVEKIT_KEYS=devkey:devsecretdevsecretdevsecretdevsecretdevsecret
+    command: --dev --bind 0.0.0.0
+    restart: unless-stopped
+    networks:
+      - chatbot-net
+
+  # ──────────────────────────────────────
+  # Voice Agent Worker
+  # ──────────────────────────────────────
+  voice-worker:
+    build: .
+    command: python -m app.voice.worker
+    env_file:
+      - .env
+    environment:
+      - QDRANT_HOST=qdrant
+      - LIVEKIT_URL=ws://livekit:7880
+      - LIVEKIT_API_KEY=devkey
+      - LIVEKIT_API_SECRET=devsecretdevsecretdevsecretdevsecretdevsecret
+    depends_on:
+      - livekit
+      - qdrant
+    restart: unless-stopped
+    networks:
+      - chatbot-net
+
+volumes:
+  qdrant_data:
+
+networks:
+  chatbot-net:
+    driver: bridge
