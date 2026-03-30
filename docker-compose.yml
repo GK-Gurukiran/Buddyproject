@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ──────────────────────────────────────
   # Main API Server
@@ -11,16 +9,19 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./chatbot.db
+      - DATABASE_URL=sqlite+aiosqlite:///./data/chatbot.db
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
-      - LIVEKIT_URL=ws://livekit:7880
-      - LIVEKIT_API_KEY=devkey
-      - LIVEKIT_API_SECRET=devsecretdevsecretdevsecretdevsecretdevsecret
       - DEBUG=true
+      - LIVEKIT_URL
+      - LIVEKIT_API_KEY
+      - LIVEKIT_API_SECRET
+      - OPENAI_API_KEY
+      - DEEPGRAM_API_KEY
+      - CARTESIA_API_KEY
     depends_on:
       qdrant:
-        condition: service_healthy
+        condition: service_started
     volumes:
       - ./data:/app/data
     restart: unless-stopped
@@ -37,27 +38,7 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - chatbot-net
-
-  # ──────────────────────────────────────
-  # LiveKit Server (Voice)
-  # ──────────────────────────────────────
-  livekit:
-    image: livekit/livekit-server:latest
-    ports:
-      - "7880:7880"
-      - "7881:7881"
-      - "7882:7882/udp"
-    environment:
-      - LIVEKIT_KEYS=devkey:devsecretdevsecretdevsecretdevsecretdevsecret
-    command: --dev --bind 0.0.0.0
+    # No healthcheck to avoid blocking dependencies in specific environments
     restart: unless-stopped
     networks:
       - chatbot-net
@@ -66,18 +47,24 @@ services:
   # Voice Agent Worker
   # ──────────────────────────────────────
   voice-worker:
-    build: .
-    command: python -m app.voice.worker
+    build:
+      context: .
+      dockerfile: Dockerfile.voice
+    command: python -m app.voice.worker dev
     env_file:
       - .env
     environment:
       - QDRANT_HOST=qdrant
-      - LIVEKIT_URL=ws://livekit:7880
-      - LIVEKIT_API_KEY=devkey
-      - LIVEKIT_API_SECRET=devsecretdevsecretdevsecretdevsecretdevsecret
+      - QDRANT_PORT=6333
+      - LIVEKIT_URL
+      - LIVEKIT_API_KEY
+      - LIVEKIT_API_SECRET
+      - OPENAI_API_KEY
+      - DEEPGRAM_API_KEY
+      - CARTESIA_API_KEY
     depends_on:
-      - livekit
-      - qdrant
+      qdrant:
+        condition: service_started
     restart: unless-stopped
     networks:
       - chatbot-net

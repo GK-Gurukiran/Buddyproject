@@ -182,15 +182,28 @@ class MemoryManager:
             limit=limit,
         )
 
-        return [
-            {
-                "id": r.get("id", ""),
-                "content": r.get("memory", r.get("text", "")),
-                "score": r.get("score", 0),
-                "metadata": r.get("metadata", {}),
-            }
-            for r in results
-        ]
+        normalized = []
+        for r in results:
+            if isinstance(r, dict):
+                normalized.append(
+                    {
+                        "id": r.get("id", ""),
+                        "content": r.get("memory", r.get("text", "")),
+                        "score": r.get("score", 0),
+                        "metadata": r.get("metadata", {}),
+                    }
+                )
+            else:
+                normalized.append(
+                    {
+                        "id": "",
+                        "content": str(r),
+                        "score": 0,
+                        "metadata": {},
+                    }
+                )
+
+        return normalized
 
     async def get_all_memories(
         self,
@@ -203,15 +216,28 @@ class MemoryManager:
 
         results = memory.get_all(user_id=composite_user_id)
 
-        return [
-            {
-                "id": r.get("id", ""),
-                "content": r.get("memory", r.get("text", "")),
-                "metadata": r.get("metadata", {}),
-                "created_at": r.get("created_at", ""),
-            }
-            for r in results
-        ]
+        normalized = []
+        for r in results:
+            if isinstance(r, dict):
+                normalized.append(
+                    {
+                        "id": r.get("id", ""),
+                        "content": r.get("memory", r.get("text", "")),
+                        "metadata": r.get("metadata", {}),
+                        "created_at": r.get("created_at", ""),
+                    }
+                )
+            else:
+                normalized.append(
+                    {
+                        "id": "",
+                        "content": str(r),
+                        "metadata": {},
+                        "created_at": "",
+                    }
+                )
+
+        return normalized
 
     async def delete_memory(self, memory_id: str) -> bool:
         """Delete a specific memory entry."""

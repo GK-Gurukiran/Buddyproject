@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     livekit_url: str = "ws://localhost:7880"
     livekit_api_key: str = ""
     livekit_api_secret: str = ""
+    livekit_agent_name: str = "buddy-voice-agent"
+    deepgram_api_key: str = ""
+    cartesia_api_key: str = ""
 
     # --- LangSmith ---
     langchain_tracing_v2: bool = False
