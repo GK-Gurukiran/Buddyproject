@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Buddy Voice Assistant</title>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0;
+         display: flex; flex-direction: column; align-items: center;
+         justify-content: center; min-height: 100vh; gap: 24px; }
+  h1  { font-size: 1.8rem; }
+  #status { color: #94a3b8; font-size: 1rem; }
+  .btn { padding: 14px 36px; border-radius: 50px; border: none; font-size: 1rem;
+         cursor: pointer; transition: opacity .2s; }
+  .btn:hover { opacity: 0.85; }
+  #startBtn { background: #22c55e; color: #fff; }
+  #stopBtn  { background: #ef4444; color: #fff; display: none; }
+  #transcript { width: 100%; max-width: 560px; background: #1e293b;
+                border-radius: 12px; padding: 20px; min-height: 160px;
+                font-size: 0.9rem; line-height: 1.6; overflow-y: auto; }
+  .msg-user { color: #60a5fa; margin-bottom: 8px; }
+  .msg-agent { color: #a3e635; margin-bottom: 8px; }
+  #orb { width: 80px; height: 80px; border-radius: 50%;
+         background: radial-gradient(circle, #6366f1, #1e40af);
+         transition: transform .1s; }
+  #orb.speaking { animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+</style>
+</head>
+<body>
+  <h1>🎤 Buddy Voice Assistant</h1>
+  <div id="orb"></div>
+  <div id="status">Click Start to begin</div>
+  <div style="display:flex;gap:12px">
+    <button class="btn" id="startBtn" onclick="startVoice()">Start Voice Chat</button>
+    <button class="btn" id="stopBtn"  onclick="stopVoice()">End Call</button>
+  </div>
+  <div id="transcript"><em style="color:#475569">Conversation will appear here…</em></div>
+
+<script>
+  const { Room, RoomEvent, Track } = LivekitClient;
+  let room = null;
+  let audioElements = new Map();
+
+  // Get your auth token from localStorage (set after login)
+  function getAuthToken() {
+    return localStorage.getItem('token') || localStorage.getItem('access_token');
+  }
+
+  function ensureAudioHost() {
+    let host = document.getElementById('audioHost');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'audioHost';
+      host.style.position = 'fixed';
+      host.style.width = '1px';
+      host.style.height = '1px';
+      host.style.left = '-9999px';
+      host.style.top = '0';
+      host.style.opacity = '0.01';
+      host.style.pointerEvents = 'none';
+      document.body.appendChild(host);
+    }
+    return host;
+  }
+
+  function clearAudioElements() {
+    for (const el of audioElements.values()) {
+      try { el.remove(); } catch (e) {}
+    }
+    audioElements.clear();
+  }
+
+  function attachAudioTrack(track, trackSid) {
+    const host = ensureAudioHost();
+    if (audioElements.has(trackSid)) return;
+    const audioEl = track.attach();
+    audioEl.autoplay = true;
+    audioEl.playsInline = true;
+    audioEl.muted = false;
+    audioEl.volume = 1;
+    host.appendChild(audioEl);
+    audioElements.set(trackSid, audioEl);
+    audioEl.play?.().catch(() => {});
+    setOrb(true);
+  }
+
+  async function startVoice() {
+    const authToken = getAuthToken();
+    if (!authToken) { alert('Please log in first.'); return; }
+
+    setStatus('Getting voice token…');
+
+    // 1. Fetch LiveKit token from your API
+    const res = await fetch('/api/v1/voice/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),   // optionally pass session_id
+    });
+
+    if (!res.ok) {
+      setStatus('❌ Failed to get token: ' + (await res.text()));
+      return;
+    }
+
+    const { token, url, room_name } = await res.json();
+
+    // 2. Connect to LiveKit room
+    room = new Room();
+
+    if (typeof room.startAudio === 'function') {
+      try {
+        await room.startAudio();
+      } catch (e) {
+        console.warn('startAudio before connect failed', e);
+      }
+    }
+
+    room.on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
+      if (track.kind === Track.Kind.Audio) {
+        attachAudioTrack(track, pub.trackSid);
+      }
+    });
+
+    room.on(RoomEvent.TrackUnsubscribed, (track, pub) => {
+      const audioEl = audioElements.get(pub.trackSid);
+      if (audioEl) {
+        track.detach(audioEl);
+        audioEl.remove();
+        audioElements.delete(pub.trackSid);
+      }
+      setOrb(false);
+    });
+
+    room.on(RoomEvent.DataReceived, (payload) => {
+      try {
+        const msg = JSON.parse(new TextDecoder().decode(payload));
+        appendMsg(msg.role, msg.text);
+      } catch {}
+    });
+
+    room.on(RoomEvent.Disconnected, () => {
+      setStatus('Disconnected.');
+      showStartBtn();
+    });
+
+    room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+      if (room.canPlaybackAudio === false) {
+        setStatus('Click Start again to enable audio playback');
+      }
+    });
+
+    await room.connect(url, token);
+    setStatus(`🟢 Connected to ${room_name} — speak now!`);
+
+    if (typeof room.startAudio === 'function') {
+      try {
+        await room.startAudio();
+      } catch (e) {
+        console.warn('startAudio after connect failed', e);
+      }
+    }
+
+    for (const participant of room.remoteParticipants.values()) {
+      for (const pub of participant.trackPublications.values()) {
+        if (pub.kind === Track.Kind.Audio && pub.track) {
+          attachAudioTrack(pub.track, pub.trackSid);
+        }
+      }
+    }
+
+    // 3. Publish microphone
+    await room.localParticipant.setMicrophoneEnabled(true);
+
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display  = 'inline-block';
+  }
+
+  async function stopVoice() {
+    if (room) { await room.disconnect(); room = null; }
+    clearAudioElements();
+    setOrb(false);
+    showStartBtn();
+    setStatus('Call ended.');
+  }
+
+  function setStatus(msg) { document.getElementById('status').textContent = msg; }
+  function setOrb(active) { document.getElementById('orb').classList.toggle('speaking', active); }
+  function showStartBtn() {
+    document.getElementById('startBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display  = 'none';
+  }
+  function appendMsg(role, text) {
+    const div = document.getElementById('transcript');
+    const p = document.createElement('p');
+    p.className = role === 'user' ? 'msg-user' : 'msg-agent';
+    p.textContent = `${role === 'user' ? '🧑' : '🤖'} ${text}`;
+    div.appendChild(p);
+    div.scrollTop = div.scrollHeight;
+  }
+</script>
+</body>
+</html>

@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Chatbot Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         :root {
             --bg-primary: #0f0f0f;
@@ -106,8 +112,14 @@
             margin-top: 8px;
         }
 
-        .btn:hover { background: var(--accent-hover); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .error-msg {
             color: var(--danger);
@@ -168,7 +180,9 @@
             transition: background 0.2s;
         }
 
-        .new-chat-btn:hover { background: var(--accent-hover); }
+        .new-chat-btn:hover {
+            background: var(--accent-hover);
+        }
 
         .session-list {
             flex: 1;
@@ -184,8 +198,13 @@
             transition: background 0.15s;
         }
 
-        .session-item:hover { background: var(--bg-hover); }
-        .session-item.active { background: var(--bg-tertiary); }
+        .session-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .session-item.active {
+            background: var(--bg-tertiary);
+        }
 
         .session-item .session-title {
             font-size: 13px;
@@ -313,7 +332,9 @@
             margin-right: auto;
         }
 
-        .message.user { flex-direction: row-reverse; }
+        .message.user {
+            flex-direction: row-reverse;
+        }
 
         .message-avatar {
             width: 32px;
@@ -361,7 +382,9 @@
             margin-top: 4px;
         }
 
-        .message.user .message-meta { text-align: right; }
+        .message.user .message-meta {
+            text-align: right;
+        }
 
         .typing-indicator {
             display: none;
@@ -390,12 +413,27 @@
             animation: typing 1.4s infinite;
         }
 
-        .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-indicator .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-6px); opacity: 1; }
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
         }
 
         /* Input Area */
@@ -447,8 +485,14 @@
             align-self: flex-end;
         }
 
-        .send-btn:hover { background: var(--accent-hover); }
-        .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
 
         .send-btn svg {
             width: 20px;
@@ -456,233 +500,387 @@
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .messages-container { padding: 16px; }
-            .input-area { padding: 12px 16px 16px; }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Voice Overlay */
+        .voice-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .voice-circle {
+            width: 120px;
+            height: 120px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: 0 0 20px rgba(108, 92, 231, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .voice-circle.active {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7);
+            }
+
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 20px rgba(108, 92, 231, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(108, 92, 231, 0);
+            }
+        }
+
+        .voice-status {
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .voice-subtext {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+        }
+
+        .end-call-btn {
+            padding: 12px 32px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .end-call-btn:hover {
+            opacity: 0.9;
+        }
+
+        .chat-header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .voice-btn {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .voice-btn:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .voice-btn svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent);
         }
     </style>
 </head>
+
 <body>
 
-<!-- Login Screen -->
-<div class="login-container" id="loginScreen">
-    <div class="login-box">
-        <h1>AI Chatbot</h1>
-        <p>Scalable Multi-Agent Platform</p>
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="loginEmail" value="admin@example.com" required>
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="loginPassword" value="admin123" required>
-            </div>
-            <button type="submit" class="btn" id="loginBtn">Sign In</button>
-            <div class="error-msg" id="loginError"></div>
-        </form>
-    </div>
-</div>
-
-<!-- Main App -->
-<div class="app-container" id="appScreen">
-    <div class="app-layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>AI Chatbot</h2>
-                <div class="user-info" id="userInfo"></div>
-            </div>
-            <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
-            <div class="session-list" id="sessionList"></div>
-            <div class="sidebar-footer">
-                <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
-            </div>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-box">
+            <h1>AI Chatbot</h1>
+            <p>Scalable Multi-Agent Platform</p>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" value="admin@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" value="admin123" required>
+                </div>
+                <button type="submit" class="btn" id="loginBtn">Sign In</button>
+                <div class="error-msg" id="loginError"></div>
+            </form>
         </div>
+    </div>
 
-        <!-- Chat Area -->
-        <div class="chat-area">
-            <div class="chat-header">
-                <h3 id="chatTitle">New Chat</h3>
-                <span class="model-badge">GPT-4o-mini via OpenRouter</span>
+    <!-- Main App -->
+    <div class="app-container" id="appScreen">
+        <div class="app-layout">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>AI Chatbot</h2>
+                    <div class="user-info" id="userInfo"></div>
+                </div>
+                <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
+                <div class="session-list" id="sessionList"></div>
+                <div class="sidebar-footer">
+                    <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+                </div>
             </div>
 
-            <div class="messages-container" id="messagesContainer">
-                <div class="welcome-screen" id="welcomeScreen">
-                    <h2>What can I help with?</h2>
-                    <p>Ask me anything — I use multiple AI agents to help you.</p>
-                    <div class="suggestions">
-                        <div class="suggestion-card" onclick="sendSuggestion('Explain how machine learning works in simple terms')">
-                            Explain how machine learning works in simple terms
-                        </div>
-                        <div class="suggestion-card" onclick="sendSuggestion('What are the best practices for building REST APIs?')">
-                            What are the best practices for building REST APIs?
-                        </div>
-                        <div class="suggestion-card" onclick="sendSuggestion('Compare Python and JavaScript for backend development')">
-                            Compare Python and JavaScript for backend development
-                        </div>
-                        <div class="suggestion-card" onclick="sendSuggestion('Write a Python function to check if a number is prime')">
-                            Write a Python function to check if a number is prime
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <div class="chat-header">
+                    <h3 id="chatTitle">New Chat</h3>
+                    <div class="chat-header-actions">
+                        <button class="voice-btn" onclick="startVoiceAssistant()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                <line x1="12" y1="19" x2="12" y2="23" />
+                                <line x1="8" y1="23" x2="16" y2="23" />
+                            </svg>
+                            Voice Assist
+                        </button>
+                        <span class="model-badge">GPT-4o via LiveKit</span>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messagesContainer">
+                    <div class="welcome-screen" id="welcomeScreen">
+                        <h2>What can I help with?</h2>
+                        <p>Ask me anything — I use multiple AI agents to help you.</p>
+                        <div class="suggestions">
+                            <div class="suggestion-card"
+                                onclick="sendSuggestion('Explain how machine learning works in simple terms')">
+                                Explain how machine learning works in simple terms
+                            </div>
+                            <div class="suggestion-card"
+                                onclick="sendSuggestion('What are the best practices for building REST APIs?')">
+                                What are the best practices for building REST APIs?
+                            </div>
+                            <div class="suggestion-card"
+                                onclick="sendSuggestion('Compare Python and JavaScript for backend development')">
+                                Compare Python and JavaScript for backend development
+                            </div>
+                            <div class="suggestion-card"
+                                onclick="sendSuggestion('Write a Python function to check if a number is prime')">
+                                Write a Python function to check if a number is prime
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="typing-indicator" id="typingIndicator">
-                <div class="dots">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <textarea id="messageInput" placeholder="Type your message..." rows="1"
-                        onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
-                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/>
-                        </svg>
-                    </button>
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <textarea id="messageInput" placeholder="Type your message..." rows="1"
+                            onkeydown="handleKeyDown(event)" oninput="autoResize(this)"></textarea>
+                        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-    const API_BASE = '/api/v1';
-    let authToken = null;
-    let currentUser = null;
-    let currentSessionId = null;
-    let sessions = [];
-    let isLoading = false;
+    <!-- Voice Overlay -->
+    <div class="voice-overlay" id="voiceOverlay">
+        <div class="voice-circle" id="voiceCircle">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+        </div>
+        <div class="voice-status" id="voiceStatus">Listening...</div>
+        <div class="voice-subtext">AI Assistant is ready to talk</div>
+        <button class="end-call-btn" onclick="stopVoiceAssistant()">End Conversation</button>
+    </div>
 
-    // --- Auth ---
-    async function handleLogin(e) {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        const errorEl = document.getElementById('loginError');
-        const btn = document.getElementById('loginBtn');
+    <script>
+        // Safety: Ensure LivekitClient and LiveKit are available
+        const LK = window.LivekitClient || window.LiveKit;
+        window.LivekitClient = LK;
+        window.LiveKit = LK;
+        if (!LK) {
+            console.error("LiveKit SDK not found! Check if the script tag is working.");
+        } else {
+            console.log("LiveKit SDK loaded successfully:", LK);
+        }
 
-        btn.disabled = true;
-        btn.textContent = 'Signing in...';
-        errorEl.style.display = 'none';
+        const API_BASE = '/api/v1';
+        let authToken = null;
+        let currentUser = null;
+        let currentSessionId = null;
+        let sessions = [];
+        let isLoading = false;
 
-        try {
-            const res = await fetch(`${API_BASE}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await res.json();
+        // --- Auth ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.getElementById('loginBtn');
 
-            if (!res.ok) {
-                throw new Error(data.detail || 'Login failed');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            errorEl.style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Login failed');
+                }
+
+                authToken = data.access_token;
+                localStorage.setItem('token', authToken);
+
+                // Get user info
+                const userRes = await fetch(`${API_BASE}/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                currentUser = await userRes.json();
+
+                showApp();
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        }
+
+        function handleLogout() {
+            authToken = null;
+            currentUser = null;
+            currentSessionId = null;
+            localStorage.removeItem('token');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appScreen').style.display = 'none';
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            document.getElementById('userInfo').textContent = `${currentUser.email} (${currentUser.role})`;
+            loadSessions();
+            startNewChat();
+        }
+
+        // --- Sessions ---
+        async function loadSessions() {
+            try {
+                const res = await fetch(`${API_BASE}/chat/sessions`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.ok) {
+                    sessions = await res.json();
+                    renderSessions();
+                }
+            } catch (err) {
+                console.error('Failed to load sessions:', err);
+            }
+        }
+
+        function renderSessions() {
+            const list = document.getElementById('sessionList');
+            if (sessions.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">No conversations yet</div>';
+                return;
             }
 
-            authToken = data.access_token;
-            localStorage.setItem('token', authToken);
-
-            // Get user info
-            const userRes = await fetch(`${API_BASE}/auth/me`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            currentUser = await userRes.json();
-
-            showApp();
-        } catch (err) {
-            errorEl.textContent = err.message;
-            errorEl.style.display = 'block';
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Sign In';
-        }
-    }
-
-    function handleLogout() {
-        authToken = null;
-        currentUser = null;
-        currentSessionId = null;
-        localStorage.removeItem('token');
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('appScreen').style.display = 'none';
-    }
-
-    function showApp() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appScreen').style.display = 'block';
-        document.getElementById('userInfo').textContent = `${currentUser.email} (${currentUser.role})`;
-        loadSessions();
-        startNewChat();
-    }
-
-    // --- Sessions ---
-    async function loadSessions() {
-        try {
-            const res = await fetch(`${API_BASE}/chat/sessions`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            if (res.ok) {
-                sessions = await res.json();
-                renderSessions();
-            }
-        } catch (err) {
-            console.error('Failed to load sessions:', err);
-        }
-    }
-
-    function renderSessions() {
-        const list = document.getElementById('sessionList');
-        if (sessions.length === 0) {
-            list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px;">No conversations yet</div>';
-            return;
-        }
-
-        list.innerHTML = sessions.map(s => `
+            list.innerHTML = sessions.map(s => `
             <div class="session-item ${s.id === currentSessionId ? 'active' : ''}"
                  onclick="loadSession('${s.id}')">
                 <div class="session-title">${escapeHtml(s.title)}</div>
                 <div class="session-meta">${s.message_count} messages</div>
             </div>
         `).join('');
-    }
-
-    async function loadSession(sessionId) {
-        currentSessionId = sessionId;
-        renderSessions();
-
-        const session = sessions.find(s => s.id === sessionId);
-        if (session) {
-            document.getElementById('chatTitle').textContent = session.title;
         }
 
-        try {
-            const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            if (res.ok) {
-                const messages = await res.json();
-                renderMessages(messages);
+        async function loadSession(sessionId) {
+            currentSessionId = sessionId;
+            renderSessions();
+
+            const session = sessions.find(s => s.id === sessionId);
+            if (session) {
+                document.getElementById('chatTitle').textContent = session.title;
             }
-        } catch (err) {
-            console.error('Failed to load messages:', err);
-        }
-    }
 
-    function startNewChat() {
-        currentSessionId = null;
-        document.getElementById('chatTitle').textContent = 'New Chat';
-        document.getElementById('messagesContainer').innerHTML = `
+            try {
+                const res = await fetch(`${API_BASE}/chat/sessions/${sessionId}/messages`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (res.ok) {
+                    const messages = await res.json();
+                    renderMessages(messages);
+                }
+            } catch (err) {
+                console.error('Failed to load messages:', err);
+            }
+        }
+
+        function startNewChat() {
+            currentSessionId = null;
+            document.getElementById('chatTitle').textContent = 'New Chat';
+            document.getElementById('messagesContainer').innerHTML = `
             <div class="welcome-screen" id="welcomeScreen">
                 <h2>What can I help with?</h2>
                 <p>Ask me anything — I use multiple AI agents to help you.</p>
@@ -702,19 +900,19 @@
                 </div>
             </div>
         `;
-        renderSessions();
-        document.getElementById('messageInput').focus();
-    }
-
-    // --- Messages ---
-    function renderMessages(messages) {
-        const container = document.getElementById('messagesContainer');
-        if (messages.length === 0) {
-            startNewChat();
-            return;
+            renderSessions();
+            document.getElementById('messageInput').focus();
         }
 
-        container.innerHTML = messages.map(m => `
+        // --- Messages ---
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            if (messages.length === 0) {
+                startNewChat();
+                return;
+            }
+
+            container.innerHTML = messages.map(m => `
             <div class="message ${m.role}">
                 <div class="message-avatar">${m.role === 'user' ? 'U' : 'AI'}</div>
                 <div>
@@ -725,17 +923,17 @@
             </div>
         `).join('');
 
-        scrollToBottom();
-    }
+            scrollToBottom();
+        }
 
-    function addMessage(role, content, agentName) {
-        const container = document.getElementById('messagesContainer');
-        const welcome = document.getElementById('welcomeScreen');
-        if (welcome) welcome.remove();
+        function addMessage(role, content, agentName) {
+            const container = document.getElementById('messagesContainer');
+            const welcome = document.getElementById('welcomeScreen');
+            if (welcome) welcome.remove();
 
-        const msgEl = document.createElement('div');
-        msgEl.className = `message ${role}`;
-        msgEl.innerHTML = `
+            const msgEl = document.createElement('div');
+            msgEl.className = `message ${role}`;
+            msgEl.innerHTML = `
             <div class="message-avatar">${role === 'user' ? 'U' : 'AI'}</div>
             <div>
                 <div class="message-content">${formatMessage(content)}</div>
@@ -743,145 +941,327 @@
                 ${role === 'assistant' && window.lastAgentTrace ? `<div class="message-meta">${renderAgentChecklist(window.lastAgentTrace)}</div>` : ''}
             </div>
         `;
-        container.appendChild(msgEl);
-        scrollToBottom();
-    }
-
-    // --- Send Message ---
-    function sendSuggestion(text) {
-        document.getElementById('messageInput').value = text;
-        sendMessage();
-    }
-
-    async function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const message = input.value.trim();
-        if (!message || isLoading) return;
-
-        isLoading = true;
-        input.value = '';
-        autoResize(input);
-        document.getElementById('sendBtn').disabled = true;
-
-        // Show user message
-        addMessage('user', message);
-
-        // Show typing indicator
-        document.getElementById('typingIndicator').style.display = 'block';
-        scrollToBottom();
-
-        try {
-            const body = { message };
-            if (currentSessionId) body.session_id = currentSessionId;
-
-            const res = await fetch(`${API_BASE}/chat/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify(body)
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.detail || 'Failed to get response');
-            }
-
-            // Hide typing indicator
-            document.getElementById('typingIndicator').style.display = 'none';
-
-            // Store agent_trace for display
-            window.lastAgentTrace = data.agent_trace || [];
-            // Show AI response
-            addMessage('assistant', data.response, data.agent_used);
-
-            // Update session
-            if (!currentSessionId) {
-                currentSessionId = data.session_id;
-                document.getElementById('chatTitle').textContent = message.substring(0, 50);
-            }
-
-            // Reload sessions
-            await loadSessions();
-
-        } catch (err) {
-            document.getElementById('typingIndicator').style.display = 'none';
-            addMessage('assistant', `Error: ${err.message}`);
-        } finally {
-            isLoading = false;
-            document.getElementById('sendBtn').disabled = false;
-            input.focus();
+            container.appendChild(msgEl);
+            scrollToBottom();
         }
-    }
 
-    // --- Helpers ---
-    function handleKeyDown(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
+        // --- Send Message ---
+        function sendSuggestion(text) {
+            document.getElementById('messageInput').value = text;
             sendMessage();
         }
-    }
 
-    function autoResize(el) {
-        el.style.height = 'auto';
-        el.style.height = Math.min(el.scrollHeight, 150) + 'px';
-    }
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message || isLoading) return;
 
-    function scrollToBottom() {
-        const container = document.getElementById('messagesContainer');
-        container.scrollTop = container.scrollHeight;
-    }
+            isLoading = true;
+            input.value = '';
+            autoResize(input);
+            document.getElementById('sendBtn').disabled = true;
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+            // Show user message
+            addMessage('user', message);
 
-    function formatMessage(text) {
-        // Basic markdown-like formatting
-        let html = escapeHtml(text);
-        // Code blocks
-        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre style="background:var(--bg-tertiary);padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0;font-size:13px;"><code>$2</code></pre>');
-        // Inline code
-        html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
-        // Bold
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        // Line breaks
-        html = html.replace(/\n/g, '<br>');
-        return html;
-    }
+            // Show typing indicator
+            document.getElementById('typingIndicator').style.display = 'block';
+            scrollToBottom();
 
-    function renderAgentChecklist(agentTrace) {
-        const allAgents = ['supervisor', 'research', 'scraper', 'assembler'];
-        return 'Agents: ' + allAgents.map(agent =>
-            agentTrace.includes(agent)
-                ? `<strong style="color:var(--success);">${agent} ✔️</strong>`
-                : `<span style="color:var(--text-muted);">${agent}</span>`
-        ).join(' | ');
-    }
-
-    // --- Auto-login if token exists ---
-    (async function init() {
-        const savedToken = localStorage.getItem('token');
-        if (savedToken) {
             try {
-                const res = await fetch(`${API_BASE}/auth/me`, {
-                    headers: { 'Authorization': `Bearer ${savedToken}` }
+                const body = { message };
+                if (currentSessionId) body.session_id = currentSessionId;
+
+                const res = await fetch(`${API_BASE}/chat/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(body)
                 });
-                if (res.ok) {
-                    authToken = savedToken;
-                    currentUser = await res.json();
-                    showApp();
-                    return;
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Failed to get response');
                 }
-            } catch (e) {}
-            localStorage.removeItem('token');
+
+                // Hide typing indicator
+                document.getElementById('typingIndicator').style.display = 'none';
+
+                // Store agent_trace for display
+                window.lastAgentTrace = data.agent_trace || [];
+                // Show AI response
+                addMessage('assistant', data.response, data.agent_used);
+
+                // Update session
+                if (!currentSessionId) {
+                    currentSessionId = data.session_id;
+                    document.getElementById('chatTitle').textContent = message.substring(0, 50);
+                }
+
+                // Reload sessions
+                await loadSessions();
+
+            } catch (err) {
+                document.getElementById('typingIndicator').style.display = 'none';
+                addMessage('assistant', `Error: ${err.message}`);
+            } finally {
+                isLoading = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            }
         }
-    })();
-</script>
+
+        // --- Helpers ---
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatMessage(text) {
+            // Basic markdown-like formatting
+            let html = escapeHtml(text);
+            // Code blocks
+            html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre style="background:var(--bg-tertiary);padding:12px;border-radius:8px;overflow-x:auto;margin:8px 0;font-size:13px;"><code>$2</code></pre>');
+            // Inline code
+            html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;font-size:13px;">$1</code>');
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Line breaks
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        }
+
+        function renderAgentChecklist(agentTrace) {
+            const allAgents = ['supervisor', 'research', 'scraper', 'assembler'];
+            return 'Agents: ' + allAgents.map(agent =>
+                agentTrace.includes(agent)
+                    ? `<strong style="color:var(--success);">${agent} ✔️</strong>`
+                    : `<span style="color:var(--text-muted);">${agent}</span>`
+            ).join(' | ');
+        }
+
+        // --- Voice Assistant ---
+        let room = null;
+        let voiceAudioElements = new Map();
+
+        function ensureVoiceAudioHost() {
+            let host = document.getElementById('voiceAudioHost');
+            if (!host) {
+                host = document.createElement('div');
+                host.id = 'voiceAudioHost';
+                host.style.position = 'fixed';
+                host.style.width = '1px';
+                host.style.height = '1px';
+                host.style.left = '-9999px';
+                host.style.top = '0';
+                host.style.opacity = '0.01';
+                host.style.pointerEvents = 'none';
+                document.body.appendChild(host);
+            }
+            return host;
+        }
+
+        function clearVoiceAudioElements() {
+            for (const el of voiceAudioElements.values()) {
+                try { el.remove(); } catch (e) {}
+            }
+            voiceAudioElements.clear();
+        }
+
+        function attachVoiceAudioTrack(track, trackSid, statusEl) {
+            const host = ensureVoiceAudioHost();
+            const existing = voiceAudioElements.get(trackSid);
+            if (existing) return;
+
+            const audioEl = track.attach();
+            audioEl.autoplay = true;
+            audioEl.playsInline = true;
+            audioEl.muted = false;
+            audioEl.volume = 1;
+            host.appendChild(audioEl);
+            voiceAudioElements.set(trackSid, audioEl);
+            audioEl.play?.().catch(() => {});
+            if (statusEl) statusEl.textContent = 'Assistant speaking...';
+        }
+
+        async function startVoiceAssistant() {
+            if (!authToken) {
+                alert("Please log in again. Session might have expired.");
+                handleLogout();
+                return;
+            }
+
+            const overlay = document.getElementById('voiceOverlay');
+            const status = document.getElementById('voiceStatus');
+            const circle = document.getElementById('voiceCircle');
+
+            overlay.style.display = 'flex';
+            status.textContent = 'Connecting...';
+            circle.classList.add('active');
+
+            try {
+                // 1. Get Token
+                const res = await fetch(`${API_BASE}/voice/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ session_id: currentSessionId })
+                });
+
+                if (res.status === 401) {
+                    throw new Error("Unauthorized. Please log in again.");
+                }
+                if (res.status === 404) {
+                    throw new Error("Session expired. Please log in again.");
+                }
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Failed to join voice room');
+
+                // 2. Connect to LiveKit
+                // Note: window.LivekitClient is the global from the SDK script
+                const LK = window.LivekitClient || window.LiveKit;
+                if (!LK) {
+                    throw new Error("LiveKit SDK failed to load. Please refresh.");
+                }
+
+                room = new LK.Room({
+                    adaptiveStream: true,
+                    dynacast: true,
+                });
+
+                if (typeof room.startAudio === 'function') {
+                    try {
+                        await room.startAudio();
+                    } catch (e) {
+                        console.warn('startAudio before connect failed', e);
+                    }
+                }
+
+                // Handle track subscription (for TTS)
+                room.on(LK.RoomEvent.TrackSubscribed, (track, publication) => {
+                    if (track.kind === 'audio') {
+                        attachVoiceAudioTrack(track, publication.trackSid, status);
+                    }
+                });
+
+                room.on(LK.RoomEvent.TrackUnsubscribed, (track, publication) => {
+                    const audioEl = voiceAudioElements.get(publication.trackSid);
+                    if (audioEl) {
+                        track.detach(audioEl);
+                        audioEl.remove();
+                        voiceAudioElements.delete(publication.trackSid);
+                    }
+                });
+
+                room.on(LK.RoomEvent.AudioPlaybackStatusChanged, () => {
+                    if (room.canPlaybackAudio === false) {
+                        status.textContent = 'Click again to enable assistant audio';
+                    }
+                });
+
+                room.on(LK.RoomEvent.DataReceived, (payload) => {
+                    try {
+                        const msg = JSON.parse(new TextDecoder().decode(payload));
+                        if (!msg?.role || !msg?.text) return;
+                        addMessage(msg.role, msg.text);
+                        status.textContent = msg.role === 'assistant'
+                            ? 'Assistant replied'
+                            : 'Listening...';
+                    } catch (e) {
+                        console.warn('Failed to parse voice transcript payload', e);
+                    }
+                });
+
+                await room.connect(data.url, data.token);
+                status.textContent = 'Connected';
+                console.log('Connected to room', room.name);
+
+                if (typeof room.startAudio === 'function') {
+                    try {
+                        await room.startAudio();
+                    } catch (e) {
+                        console.warn('startAudio after connect failed', e);
+                    }
+                }
+
+                for (const participant of room.remoteParticipants.values()) {
+                    for (const publication of participant.trackPublications.values()) {
+                        if (publication.kind === 'audio' && publication.track) {
+                            attachVoiceAudioTrack(publication.track, publication.trackSid, status);
+                        }
+                    }
+                }
+
+                // 3. Enable Microphone
+                await room.localParticipant.setMicrophoneEnabled(true);
+                status.textContent = 'Listening...';
+
+            } catch (err) {
+                console.error("Voice Error:", err);
+                status.textContent = 'Error: ' + err.message;
+                circle.classList.remove('active');
+                if (err.message.includes("Unauthorized") || err.message.includes("Session expired")) {
+                    setTimeout(handleLogout, 2000);
+                } else {
+                    setTimeout(stopVoiceAssistant, 3000);
+                }
+            }
+        }
+
+        async function stopVoiceAssistant() {
+            if (room) {
+                await room.disconnect();
+                room = null;
+            }
+            clearVoiceAudioElements();
+            document.getElementById('voiceOverlay').style.display = 'none';
+            document.getElementById('voiceCircle').classList.remove('active');
+        }
+
+        // --- Auto-login if token exists ---
+        (async function init() {
+            const savedToken = localStorage.getItem('token');
+            if (savedToken) {
+                try {
+                    const res = await fetch(`${API_BASE}/auth/me`, {
+                        headers: { 'Authorization': `Bearer ${savedToken}` }
+                    });
+                    if (res.ok) {
+                        authToken = savedToken;
+                        currentUser = await res.json();
+                        showApp();
+                        return;
+                    }
+                } catch (e) { }
+                localStorage.removeItem('token');
+            }
+        })();
+    </script>
 
 </body>
+
 </html>

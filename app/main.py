@@ -13,7 +13,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.models.database import init_db
-from app.routers import auth, tenants, chat, memory, voice
+from app.routers import auth, tenants, chat, memory
+from app.voice import router as voice
 
 settings = get_settings()
 
